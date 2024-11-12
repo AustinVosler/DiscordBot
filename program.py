@@ -1,10 +1,11 @@
-from datetime import datetime
-import discord
 import os
-from dotenv import load_dotenv
-import sqlite3
 import random
+import sqlite3
+from datetime import datetime
+
+import discord
 from discord.ext import pages
+from dotenv import load_dotenv
 
 # 
 # INITIAL CONFIGS
@@ -73,10 +74,6 @@ async def on_raw_reaction_add(payload):
     score = res.fetchone()[0]
     await message.reply(f"Analysis... {score} funny points!")
 
-@bot.slash_command(name="hello", description="Say hello to the bot")
-async def hello(ctx: discord.ApplicationContext):
-    await ctx.respond("Hey!")
-
 # 
 # PAGINATION FUNCTIONS
 # 
@@ -121,6 +118,14 @@ async def page_maker(guild_name, num_pages, num_messages):
 
     discord.ext.pages = pages
     return discord.ext.pages
+
+# 
+# SLASH COMMANDS
+# 
+
+@bot.slash_command(name="hello", description="Say hello to the bot")
+async def hello(ctx: discord.ApplicationContext):
+    await ctx.respond("Hey!")
 
 @bot.slash_command(name="list-messages", description="List the messages that have been analyzed")
 async def list_messages(ctx: discord.ApplicationContext):
