@@ -44,7 +44,6 @@ async def on_raw_reaction_add(payload):
                     bot.get_channel(payload.channel_id).guild.name,
                     datetime.now()))
 
-    
     res = cur.execute("SELECT name FROM sqlite_master WHERE name LIKE '{}'".format(guild_name))
     if (res.fetchone() == None):
         cur.execute("CREATE TABLE {}(id, user_name, message_id, message, score)".format(guild_name))
@@ -53,6 +52,10 @@ async def on_raw_reaction_add(payload):
     if (res.fetchone() == None):
         cur.execute("INSERT INTO {} VALUES ({},'{}',{},'{}',{})".format(guild_name, user.id, user.name, message.id, message.content, random.randint(1, 100)))
         con.commit()
+
+    res = cur.execute("SELECT score FROM {} WHERE message_id == {}".format(guild_name, message.id))
+    score = res.fetchone()[0]
+    await message.reply(f"Analysis... {score} funny points!")
 
 @bot.slash_command(name="hello", description="Say hello to the bot")
 async def hello(ctx: discord.ApplicationContext):
