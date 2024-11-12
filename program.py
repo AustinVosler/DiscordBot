@@ -7,6 +7,8 @@ import discord
 from discord.ext import pages
 from dotenv import load_dotenv
 
+import analysis
+
 # 
 # INITIAL CONFIGS
 # 
@@ -15,6 +17,8 @@ load_dotenv() # load all the variables from the env file
 intents = discord.Intents.default()
 intents.message_content = True
 bot = discord.Bot(intents=intents)
+
+analysis.hi()
 
 # 
 # HELPER METHODS
