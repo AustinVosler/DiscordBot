@@ -47,11 +47,11 @@ async def on_raw_reaction_add(payload):
     
     res = cur.execute("SELECT name FROM sqlite_master WHERE name LIKE '{}'".format(guild_name))
     if (res.fetchone() == None):
-        cur.execute("CREATE TABLE {}(id, message_id, message, score)".format(guild_name))
+        cur.execute("CREATE TABLE {}(id, user_name, message_id, message, score)".format(guild_name))
 
     res = cur.execute("SELECT message_id FROM {} WHERE message_id LIKE '{}'".format(guild_name, message.id))
     if (res.fetchone() == None):
-        cur.execute("INSERT INTO {} VALUES ({},{},'{}',{})".format(guild_name, user.id, message.id, message.content, random.randint(1, 100)))
+        cur.execute("INSERT INTO {} VALUES ({},'{}',{},'{}',{})".format(guild_name, user.id, user.name, message.id, message.content, random.randint(1, 100)))
         con.commit()
 
 @bot.slash_command(name="hello", description="Say hello to the bot")
