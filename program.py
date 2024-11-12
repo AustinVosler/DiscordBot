@@ -4,16 +4,20 @@ import os
 from dotenv import load_dotenv
 import sqlite3
 import random
-from discord.ext.pages import Paginator, Page
-from discord.commands import SlashCommandGroup
-from discord.ext import commands, pages
+from discord.ext import pages
+
+# 
+# INITIAL CONFIGS
+# 
 
 load_dotenv() # load all the variables from the env file
-
-
 intents = discord.Intents.default()
 intents.message_content = True
 bot = discord.Bot(intents=intents)
+
+# 
+# HELPER METHODS
+# 
 
 def fix_name(name):
     new_name = ""
@@ -30,9 +34,9 @@ def fix_name(name):
 def calculate_score():
     return random.randint(1, 100)
 
-@bot.event
-async def on_ready():
-    print(f"{bot.user} is ready and online!")
+# 
+# GATHER MESSAGE DATA ON REACTION
+# 
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -50,15 +54,13 @@ async def on_raw_reaction_add(payload):
                     bot.get_channel(payload.channel_id), 
                     bot.get_channel(payload.channel_id).guild.name,
                     datetime.now()))
-    
-    # print(message.attachments.pop(0))
 
     res = cur.execute("SELECT name FROM sqlite_master WHERE name LIKE '{}'".format(guild_name))
-    if (res.fetchone() == None):
+    if (res.fetchone() is None):
         cur.execute("CREATE TABLE {}(id, user_name, message_id, message, attachments, score)".format(guild_name))
 
     res = cur.execute("SELECT message_id FROM {} WHERE message_id LIKE '{}'".format(guild_name, message.id))
-    if (res.fetchone() == None):
+    if (res.fetchone() is None):
         score = calculate_score()
         if (len(message.attachments) > 0):
             attachment = message.attachments.pop(0)
@@ -75,6 +77,10 @@ async def on_raw_reaction_add(payload):
 async def hello(ctx: discord.ApplicationContext):
     await ctx.respond("Hey!")
 
+# 
+# PAGINATION FUNCTIONS
+# 
+
 async def get_messages(num_messages, guild_name, pages_made):
     res = cur.execute("SELECT id, message, score, attachments FROM {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, pages_made*2))
 
@@ -86,7 +92,7 @@ async def get_messages(num_messages, guild_name, pages_made):
     while i < len(data):
         value = ""
         name = await bot.fetch_user(data[i][0])
-        if name.global_name != None:
+        if name.global_name is not None:
             name = name.global_name
 
         if data[i][1] == "" and data[i][3] != "":
@@ -99,7 +105,6 @@ async def get_messages(num_messages, guild_name, pages_made):
                 value = f"{value}"
             )
         )
-        # attachments.append(data[i][3])
         i = i + 1
 
     return fields, attachments
@@ -111,9 +116,6 @@ async def page_maker(guild_name, num_pages, num_messages):
     while i < num_pages:
         fields, attachments = await get_messages(num_messages, guild_name, i)
         embed = discord.Embed(title = "Funniest Messages", fields = fields)
-        # for pics in attachments:
-        #     if pics != "":
-        #         embed.image = pics
         pages.append(embed)
         i = i + 1
 
@@ -122,15 +124,19 @@ async def page_maker(guild_name, num_pages, num_messages):
 
 @bot.slash_command(name="list-messages", description="List the messages that have been analyzed")
 async def list_messages(ctx: discord.ApplicationContext):
-    # """Demonstrates using the paginator with the default options."""
     guild_name = ctx.guild
     paginator = pages.Paginator(pages = await page_maker((fix_name(str(guild_name))), 3, 5))
     await paginator.respond(ctx.interaction, ephemeral=False)
+
+# 
+# BOT SETUP
+# 
+
+@bot.event
+async def on_ready():
+    print(f"{bot.user} is ready and online!")
 
 con = sqlite3.connect("database.db")
 cur = con.cursor()
 
 bot.run((os.getenv('token'))) # run the bot with the token
-
-# res = cur.execute("SELECT * FROM Lol")
-# print(res.fetchone())
