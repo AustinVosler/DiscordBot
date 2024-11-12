@@ -58,7 +58,7 @@ async def on_raw_reaction_add(payload):
 async def hello(ctx: discord.ApplicationContext):
     await ctx.respond("Hey!")
 
-con = sqlite3.connect("messages.db")
+con = sqlite3.connect("database.db")
 cur = con.cursor()
 
 bot.run((os.getenv('token'))) # run the bot with the token
