@@ -47,14 +47,14 @@ def calculate_score():
 async def on_raw_reaction_add(payload):
     if (payload.emoji.name != "🔍"):
         return
-
-    if (payload.author == bot.user):
-        return
     
     message = await bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
 
     guild_name = fix_name(bot.get_channel(payload.channel_id).guild.name)
     user = message.author
+
+    if (user.id == bot.user.id):
+        return
 
     print("id {} name {}".format(user.id, user.name))
     print("Message reacted to: \"{}\" with {} in channel {} in {} at {}\n"
