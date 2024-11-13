@@ -7,7 +7,7 @@ import discord
 from discord.ext import pages
 from dotenv import load_dotenv
 
-import analysis
+# import analysis
 
 # 
 # INITIAL CONFIGS
@@ -18,7 +18,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = discord.Bot(intents=intents)
 
-analysis.hi()
+# analysis.hi()
 
 # 
 # HELPER METHODS
@@ -46,6 +46,9 @@ def calculate_score():
 @bot.event
 async def on_raw_reaction_add(payload):
     if (payload.emoji.name != "🔍"):
+        return
+
+    if (payload.author == bot.user):
         return
     
     message = await bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
@@ -83,7 +86,7 @@ async def on_raw_reaction_add(payload):
 # 
 
 async def get_messages(num_messages, guild_name, pages_made):
-    res = cur.execute("SELECT id, message, score, attachments FROM {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, pages_made*2))
+    res = cur.execute("SELECT id, message, score, attachments FROM {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, pages_made * num_messages))
 
     data = res.fetchmany(num_messages)
     fields = []
