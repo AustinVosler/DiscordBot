@@ -39,6 +39,18 @@ def fix_name(name):
 def calculate_score():
     return random.randint(1, 100)
 
+def fix_message(message):
+    i = 0
+
+    for ch in message:
+        if (ch == "'"):
+            message = message[:i] + "'" + message[i:]
+            print(message)
+            i = i + 1
+        i = i + 1
+
+    return message
+
 # 
 # GATHER MESSAGE DATA ON REACTION
 # 
@@ -50,6 +62,10 @@ async def on_raw_reaction_add(payload):
     
     message = await bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
 
+    print(message.content)
+
+    message_content = fix_message(message.content)
+
     guild_name = fix_name(bot.get_channel(payload.channel_id).guild.name)
     user = message.author
 
@@ -58,7 +74,7 @@ async def on_raw_reaction_add(payload):
 
     print("id {} name {}".format(user.id, user.name))
     print("Message reacted to: \"{}\" with {} in channel {} in {} at {}\n"
-            .format(message.content, payload.emoji.name, 
+            .format(message_content, payload.emoji.name, 
                     bot.get_channel(payload.channel_id), 
                     bot.get_channel(payload.channel_id).guild.name,
                     datetime.now()))
@@ -74,7 +90,7 @@ async def on_raw_reaction_add(payload):
             attachment = message.attachments.pop(0)
         else:
             attachment = ""
-        cur.execute("INSERT INTO {} VALUES ({},'{}',{},'{}','{}',{})".format(guild_name, user.id, user.name, message.id, message.content, attachment, score))
+        cur.execute("INSERT INTO {} VALUES ({},'{}',{},'{}','{}',{})".format(guild_name, user.id, user.name, message.id, message_content, attachment, score))
         con.commit()
 
     res = cur.execute("SELECT score FROM {} WHERE message_id == {}".format(guild_name, message.id))
