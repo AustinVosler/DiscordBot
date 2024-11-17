@@ -2,6 +2,7 @@ import os
 import random
 import sqlite3
 from datetime import datetime
+from multipledispatch import dispatch
 
 import discord
 from discord.ext import pages
@@ -95,19 +96,14 @@ async def on_raw_reaction_add(payload):
 
     res = cur.execute("SELECT score FROM {} WHERE message_id == {}".format(guild_name, message.id))
     score = res.fetchone()[0]
-    await message.reply(f"Analysis... {score} funny points!")
+    await message.reply(f"Analysis... {score} funny points! (requested by {payload.member.mention})")
 
 # 
 # PAGINATION FUNCTIONS
 # 
 
-async def get_messages(num_messages, guild_name, pages_made):
-    res = cur.execute("SELECT id, message, score, attachments FROM {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, pages_made * num_messages))
-
-    data = res.fetchmany(num_messages)
+async def get_messages(data):    
     fields = []
-    attachments = []
-    
     i = 0
     while i < len(data):
         value = ""
@@ -119,6 +115,11 @@ async def get_messages(num_messages, guild_name, pages_made):
             value = data[i][3]
         else:
             value = data[i][1]
+
+        # msg = await name.fetch_message(data[i][4])
+        # msg_link = msg.jump_url
+        # print(msg_link)
+
         fields.append(
             discord.EmbedField(
                 name = f"{name} - {data[i][2]} funny points!!",
@@ -127,15 +128,36 @@ async def get_messages(num_messages, guild_name, pages_made):
         )
         i = i + 1
 
-    return fields, attachments
+    return fields
 
-async def page_maker(guild_name, num_pages, num_messages):
+async def page_maker(guild_name, num_messages, num_pages):
     pages = []
     
     i = 0
     while i < num_pages:
-        fields, attachments = await get_messages(num_messages, guild_name, i)
+        res = cur.execute("SELECT id, message, score, attachments, message_id FROM {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, i * num_messages))
+        data = res.fetchmany(num_messages)
+        fields = await get_messages(data)
         embed = discord.Embed(title = "Funniest Messages", fields = fields)
+        pages.append(embed)
+        i = i + 1
+
+    discord.ext.pages = pages
+    return discord.ext.pages
+
+async def page_maker_id(guild_name, user_id, num_messages, num_pages):
+    pages = []
+    name = await bot.fetch_user(user_id)
+
+    if name.global_name is not None:
+        name = name.global_name
+    
+    i = 0
+    while i < num_pages:
+        res = cur.execute("SELECT id, message, score, attachments, message_id FROM {} WHERE id = {} ORDER BY score DESC LIMIT -1 OFFSET {}".format(guild_name, user_id, i * num_messages))
+        data = res.fetchmany(num_messages)
+        fields = await get_messages(data)
+        embed = discord.Embed(title = f"Funniest Messages by {name}", fields = fields)
         pages.append(embed)
         i = i + 1
 
@@ -153,7 +175,14 @@ async def hello(ctx: discord.ApplicationContext):
 @bot.slash_command(name="list-messages", description="List the messages that have been analyzed")
 async def list_messages(ctx: discord.ApplicationContext):
     guild_name = ctx.guild
-    paginator = pages.Paginator(pages = await page_maker((fix_name(str(guild_name))), 3, 5))
+    paginator = pages.Paginator(pages = await page_maker((fix_name(str(guild_name))), 5, 3))
+    await paginator.respond(ctx.interaction, ephemeral=False)
+
+@bot.slash_command(name="list-messages-personal", description="List the messages (sent by you!) that have been analyzed")
+async def list_messages_personal(ctx: discord.ApplicationContext):
+    guild_name = ctx.guild
+    user_id = ctx.author.id
+    paginator = pages.Paginator(pages = await page_maker_id((fix_name(str(guild_name))), user_id, 5, 3))
     await paginator.respond(ctx.interaction, ephemeral=False)
 
 # 
