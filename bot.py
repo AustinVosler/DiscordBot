@@ -1,6 +1,5 @@
 import os
 import discord
-from discord.ext import pages
 from dotenv import load_dotenv
 
 from cogs.message_score import MessageScore
